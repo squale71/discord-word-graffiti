@@ -58,12 +58,12 @@ namespace Discord.WordGraffiti.App_Start
 
         public async Task RegisterCommandsAsync()
         {
-            _client.MessageReceived += HandleCommandAsync;
+            _client.MessageReceived += HandleMessageAsync;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
-        private async Task HandleCommandAsync(SocketMessage arg)
+        private async Task HandleMessageAsync(SocketMessage arg)
         {
             var message = arg as SocketUserMessage;
 
