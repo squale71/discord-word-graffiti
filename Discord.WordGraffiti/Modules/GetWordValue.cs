@@ -15,7 +15,7 @@ namespace Discord.WordGraffiti.Modules
             int wordValue = 0;
             using (var db = new PostgresDBProvider())
             {
-                using (var cmd = new NpgsqlCommand("SELECT value FROM word WHERE name='"+word+"'", db.Connection))
+                using (var cmd = new NpgsqlCommand("SELECT value FROM word WHERE name='" + word + "'", db.Connection))
                 using (var reader = cmd.ExecuteReader())
                     while (reader.Read())
                         wordValue = reader.GetInt32(0);
