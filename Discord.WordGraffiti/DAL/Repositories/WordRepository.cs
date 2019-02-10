@@ -3,6 +3,7 @@ using Discord.WordGraffiti.DAL.Models;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace Discord.WordGraffiti.DAL.Repositories
@@ -21,11 +22,14 @@ namespace Discord.WordGraffiti.DAL.Repositories
         {
             using (var db = new PostgresDBProvider())
             using (var cmd = new NpgsqlCommand("DELETE FROM word WHERE id='@id';", db.Connection))
-            using (var reader = cmd.ExecuteReader())
             {
                 cmd.Parameters.AddWithValue("@id", entity.Id);
-                await cmd.ExecuteNonQueryAsync();
-            }
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }          
         }
 
         /// <summary>
@@ -58,16 +62,18 @@ namespace Discord.WordGraffiti.DAL.Repositories
         {
             using (var db = new PostgresDBProvider())
             using (var cmd = new NpgsqlCommand("SELECT * from word WHERE id='@id';", db.Connection))
-            using (var reader = cmd.ExecuteReader())
             {
                 cmd.Parameters.AddWithValue("@id", id);
 
-                if (await reader.ReadAsync())
+                using (var reader = cmd.ExecuteReader())
                 {
-                    return GetWordFromDataReader(reader);
+                    if (await reader.ReadAsync())
+                    {
+                        return GetWordFromDataReader(reader);
+                    }
                 }
             }
-
+                
             return null;
         }
 
@@ -79,17 +85,20 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task<Word> GetByWord(string word)
         {
             using (var db = new PostgresDBProvider())
-            using (var cmd = new NpgsqlCommand("SELECT * from word WHERE name='@word';", db.Connection))
-            using (var reader = cmd.ExecuteReader())
+            using (var cmd = new NpgsqlCommand("SELECT * from word WHERE name = @name", db.Connection))
             {
-                cmd.Parameters.AddWithValue("@word", word);
-
-                if (await reader.ReadAsync())
+                cmd.Parameters.AddWithValue("name", word);
+                using (var reader = cmd.ExecuteReader())
                 {
-                    return GetWordFromDataReader(reader);         
-                }
-            }               
+                    var sql = cmd.CommandText;
 
+                    if (await reader.ReadAsync())
+                    {
+                        return GetWordFromDataReader(reader);
+                    }
+                }
+            }
+                       
             return null;
         }
 
@@ -104,13 +113,14 @@ namespace Discord.WordGraffiti.DAL.Repositories
 
             using (var db = new PostgresDBProvider())
             using (var cmd = new NpgsqlCommand($"SELECT * from word WHERE name in (@words);", db.Connection))
-            using (var reader = cmd.ExecuteReader())
             {
                 cmd.Parameters.AddWithValue("@words", string.Join(",", words));
-
-                while (await reader.ReadAsync())
-                {
-                    wordCollection.Add(GetWordFromDataReader(reader));
+                using (var reader = cmd.ExecuteReader())
+                {                  
+                    while (await reader.ReadAsync())
+                    {
+                        wordCollection.Add(GetWordFromDataReader(reader));
+                    }
                 }
             }
 
@@ -131,31 +141,34 @@ namespace Discord.WordGraffiti.DAL.Repositories
                 if (word == null)
                 {
                     using (var cmd = new NpgsqlCommand("INSERT INTO word (name, value) VALUES (@name, @value);", db.Connection))
-                    using (var reader = cmd.ExecuteReader())
                     {
                         cmd.Parameters.AddWithValue("@name", entity.Name);
                         cmd.Parameters.AddWithValue("@value", entity.Value);
 
-                        await cmd.ExecuteNonQueryAsync();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            await cmd.ExecuteNonQueryAsync();
 
-                        return await GetByWord(entity.Name);
-                    }
+                            return await GetByWord(entity.Name);
+                        }
+                    }   
                 }
 
                 else
                 {
-
                     using (var cmd = new NpgsqlCommand("UPDATE word SET name=@name, value=@value WHERE id='@id';", db.Connection))
-                    using (var reader = cmd.ExecuteReader())
                     {
                         cmd.Parameters.AddWithValue("@id", entity.Id);
                         cmd.Parameters.AddWithValue("@name", entity.Name);
                         cmd.Parameters.AddWithValue("@value", entity.Value);
 
-                        await cmd.ExecuteNonQueryAsync();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            await cmd.ExecuteNonQueryAsync();
 
-                        return entity;
-                    }
+                            return entity;
+                        }
+                    }                   
                 }
             }       
         }

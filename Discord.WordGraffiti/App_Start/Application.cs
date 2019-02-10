@@ -36,7 +36,7 @@ namespace Discord.WordGraffiti.App_Start
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
-                .AddSingleton<IRepository<Word>, WordRepository>()
+                .AddSingleton<IWordRepository, WordRepository>()
                 .BuildServiceProvider();
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
