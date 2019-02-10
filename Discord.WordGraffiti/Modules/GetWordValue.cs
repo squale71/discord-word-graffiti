@@ -1,6 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
-using Discord.WordGraffiti.Models.Database;
+using Discord.WordGraffiti.DAL.Database;
 using Npgsql;
 using System.Threading.Tasks;
 

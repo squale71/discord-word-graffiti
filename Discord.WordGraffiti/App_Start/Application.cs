@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Npgsql;
-using Discord.WordGraffiti.Models.Database;
+using Discord.WordGraffiti.DAL.Database;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
