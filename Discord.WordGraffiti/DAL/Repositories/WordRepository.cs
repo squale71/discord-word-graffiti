@@ -98,7 +98,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
         /// </summary>
         /// <param name="words"></param>
         /// <returns>A collection of words. Will be empty if no matches.</returns>
-        public async Task<IEnumerable<Word>> GetWords(IEnumerable<string> words)
+        public async Task<IEnumerable<Word>> GetByWords(IEnumerable<string> words)
         {
             var wordCollection = new List<Word>();
 
@@ -174,6 +174,6 @@ namespace Discord.WordGraffiti.DAL.Repositories
     public interface IWordRepository : IRepository<Word>
     {
         Task<Word> GetByWord(string word);
-        Task<IEnumerable<Word>> GetWords(IEnumerable<string> word);
+        Task<IEnumerable<Word>> GetByWords(IEnumerable<string> word);
     }
 }
