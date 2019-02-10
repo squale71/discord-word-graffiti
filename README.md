@@ -18,5 +18,3 @@ Run the following commands:
 dotnet user-secrets set DiscordApiKey "{your-key}"
 
 dotnet user-secrets set PostgresDatabaseConnectionString "{your-connection-string}"
-
-dotnet user-secrets set PostgresDatabaseName "{your-database-name}"
