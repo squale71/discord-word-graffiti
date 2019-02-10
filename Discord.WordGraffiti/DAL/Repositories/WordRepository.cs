@@ -76,7 +76,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
         /// </summary>
         /// <param name="word"></param>
         /// <returns>A word, or null if not found.</returns>
-        public async Task<Word> GetWord(string word)
+        public async Task<Word> GetByWord(string word)
         {
             using (var db = new PostgresDBProvider())
             using (var cmd = new NpgsqlCommand("SELECT * from word WHERE name='@word';", db.Connection))
@@ -138,7 +138,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
 
                         await cmd.ExecuteNonQueryAsync();
 
-                        return await GetWord(entity.Name);
+                        return await GetByWord(entity.Name);
                     }
                 }
 
@@ -173,7 +173,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
 
     public interface IWordRepository : IRepository<Word>
     {
-        Task<Word> GetWord(string word);
+        Task<Word> GetByWord(string word);
         Task<IEnumerable<Word>> GetWords(IEnumerable<string> word);
     }
 }
