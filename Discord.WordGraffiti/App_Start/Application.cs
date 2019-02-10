@@ -84,9 +84,7 @@ namespace Discord.WordGraffiti.App_Start
             }
             else //This is where we're parsing all chat messages to do point assignment stuff. Probably should break this out somewhere (into multiple pieces, really)so consider this proof of concept.
             {
-
-                string[] msgWords = Regex.Replace(message.Content, @"[^\w]"," ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
-                var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
+                var uniqueWords = await GetWordsFromMessage(message);
 
                 int wordVals = 0;
                 using (var db = new PostgresDBProvider())
@@ -106,5 +104,13 @@ namespace Discord.WordGraffiti.App_Start
                 await chnl.SendMessageAsync("That message was worth " + wordVals + " points!");
             }
         }
+        
+        private async Task<HashSet<string>> GetWordsFromMessage(SocketUserMessage message)
+        {
+            string[] msgWords = Regex.Replace(message.Content, @"[^\w]", " ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
+            var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
+            return uniqueWords;
+        }
+
     }
 }
