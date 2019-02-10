@@ -5,6 +5,10 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Npgsql;
+using Discord.WordGraffiti.Models.Database;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Discord.WordGraffiti.App_Start
 {
@@ -54,12 +58,12 @@ namespace Discord.WordGraffiti.App_Start
 
         public async Task RegisterCommandsAsync()
         {
-            _client.MessageReceived += HandleCommandAsync;
+            _client.MessageReceived += HandleMessageAsync;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
-        private async Task HandleCommandAsync(SocketMessage arg)
+        private async Task HandleMessageAsync(SocketMessage arg)
         {
             var message = arg as SocketUserMessage;
 
@@ -77,6 +81,29 @@ namespace Discord.WordGraffiti.App_Start
                 {
                     Console.WriteLine(res.ErrorReason);
                 }
+            }
+            else //This is where we're parsing all chat messages to do point assignment stuff. Probably should break this out somewhere (into multiple pieces, really)so consider this proof of concept.
+            {
+
+                string[] msgWords = Regex.Replace(message.Content, @"[^\w]"," ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
+                var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
+
+                int wordVals = 0;
+                using (var db = new PostgresDBProvider())
+                {
+                    foreach (var word in uniqueWords)
+                    {
+                        Console.WriteLine(word);
+                        int val = 0;
+                        using (var cmd = new NpgsqlCommand("SELECT value from word WHERE name='"+word+"'", db.Connection))
+                        using (var reader = cmd.ExecuteReader())
+                            while (reader.Read())
+                                val = reader.GetInt32(0);
+                        wordVals += val;
+                    }
+                }
+                var chnl = _client.GetChannel(message.Channel.Id) as IMessageChannel;
+                await chnl.SendMessageAsync("That message was worth " + wordVals + " points!");
             }
         }
     }
