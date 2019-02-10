@@ -9,6 +9,8 @@ using Npgsql;
 using Discord.WordGraffiti.DAL.Database;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Discord.WordGraffiti.DAL.Models;
+using Discord.WordGraffiti.DAL.Repositories;
 
 namespace Discord.WordGraffiti.App_Start
 {
@@ -65,9 +67,36 @@ namespace Discord.WordGraffiti.App_Start
 
         private async Task HandleMessageAsync(SocketMessage arg)
         {
+           
             var message = arg as SocketUserMessage;
 
             if (message is null || message.Author.IsBot) return;
+
+            using (var db = new PostgresDBProvider())
+            {
+                long testval = 0;
+                using (var cmd = new NpgsqlCommand("SELECT id FROM user WHERE EXISTS (SELECT id FROM user WHERE id ='" + message.Author.Id + "');", db.Connection))
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                        //testval = reader.GetBoolean
+                Console.WriteLine(testval);      
+                    //var user = new User();
+
+                //Console.WriteLine(message.Author.Id);
+
+                //user.Id = message.Author.Id;
+                //user.Username = message.Author.Username;
+
+                //Console.WriteLine("DB User ID: " + user.Id);
+                //Console.WriteLine("DB Username: " + user.Username);
+
+
+                //using (var cmd = new NpgsqlCommand("SELECT value from word WHERE name='" + word + "'", db.Connection))
+                //using (var reader = cmd.ExecuteReader())
+                //    while (reader.Read())
+                //        val = reader.GetInt32(0);                
+
+            }
 
             int argPos = 0;
 
@@ -85,7 +114,10 @@ namespace Discord.WordGraffiti.App_Start
             else //This is where we're parsing all chat messages to do point assignment stuff. Probably should break this out somewhere (into multiple pieces, really)so consider this proof of concept.
             {
                 var uniqueWords = await GetWordsFromMessage(message);
-
+                //public async Task GetValueAsync(int id)
+                {
+                 
+                }
                 int wordVals = 0;
                 using (var db = new PostgresDBProvider())
                 {
@@ -110,6 +142,11 @@ namespace Discord.WordGraffiti.App_Start
             string[] msgWords = Regex.Replace(message.Content, @"[^\w]", " ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
             var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
             return uniqueWords;
+        }
+
+        public async Task GetValueAsync(int id)
+        {
+
         }
 
     }
