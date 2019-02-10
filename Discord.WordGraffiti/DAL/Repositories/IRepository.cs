@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace Discord.WordGraffiti.Models.Repositories
+namespace Discord.WordGraffiti.DAL.Repositories
 {
     public interface IRepository<T>
     {

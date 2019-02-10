@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Discord.WordGraffiti.Models.Database
+namespace Discord.WordGraffiti.DAL.Database
 {
     public abstract class DBProvider : IDisposable
     {
