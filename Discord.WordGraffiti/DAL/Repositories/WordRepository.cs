@@ -39,14 +39,12 @@ namespace Discord.WordGraffiti.DAL.Repositories
             var wordCollection = new List<Word>();
 
             using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("SELECT * from word;", db.Connection))
+            using (var reader = cmd.ExecuteReader())
             {
-                using (var cmd = new NpgsqlCommand("SELECT * from word;", db.Connection))
-                using (var reader = cmd.ExecuteReader())
+                if (await reader.ReadAsync())
                 {
-                    if (await reader.ReadAsync())
-                    {
-                        wordCollection.Add(GetWordFromDataReader(reader));
-                    }
+                    wordCollection.Add(GetWordFromDataReader(reader));
                 }
             }
 
@@ -61,16 +59,14 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task<Word> GetByID(int id)
         {
             using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("SELECT * from word WHERE id='@id';", db.Connection))
+            using (var reader = cmd.ExecuteReader())
             {
-                using (var cmd = new NpgsqlCommand("SELECT * from word WHERE id='@id';", db.Connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@id", id);
 
-                    if (await reader.ReadAsync())
-                    {
-                        return GetWordFromDataReader(reader);
-                    }
+                if (await reader.ReadAsync())
+                {
+                    return GetWordFromDataReader(reader);
                 }
             }
 
@@ -85,18 +81,16 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task<Word> GetWord(string word)
         {
             using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("SELECT * from word WHERE name='@word';", db.Connection))
+            using (var reader = cmd.ExecuteReader())
             {
-                using (var cmd = new NpgsqlCommand("SELECT * from word WHERE name='@word';", db.Connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    cmd.Parameters.AddWithValue("@word", word);
+                cmd.Parameters.AddWithValue("@word", word);
 
-                    if (await reader.ReadAsync())
-                    {
-                        return GetWordFromDataReader(reader);         
-                    }
-                }               
-            }
+                if (await reader.ReadAsync())
+                {
+                    return GetWordFromDataReader(reader);         
+                }
+            }               
 
             return null;
         }
@@ -111,16 +105,14 @@ namespace Discord.WordGraffiti.DAL.Repositories
             var wordCollection = new List<Word>();
 
             using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand($"SELECT * from word WHERE name in (@words);", db.Connection))
+            using (var reader = cmd.ExecuteReader())
             {
-                using (var cmd = new NpgsqlCommand($"SELECT * from word WHERE name in (@words);", db.Connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    cmd.Parameters.AddWithValue("@words", string.Join(",", words));
+                cmd.Parameters.AddWithValue("@words", string.Join(",", words));
 
-                    while (await reader.ReadAsync())
-                    {
-                        wordCollection.Add(GetWordFromDataReader(reader));
-                    }
+                while (await reader.ReadAsync())
+                {
+                    wordCollection.Add(GetWordFromDataReader(reader));
                 }
             }
 
@@ -136,9 +128,9 @@ namespace Discord.WordGraffiti.DAL.Repositories
         {
             var word = await GetByID(entity.Id);
 
-            if (word == null)
+            using (var db = new PostgresDBProvider())
             {
-                using (var db = new PostgresDBProvider())
+                if (word == null)
                 {
                     using (var cmd = new NpgsqlCommand("INSERT INTO word (name, value) VALUES (@name, @value);", db.Connection))
                     using (var reader = cmd.ExecuteReader())
@@ -151,12 +143,10 @@ namespace Discord.WordGraffiti.DAL.Repositories
                         return await GetWord(entity.Name);
                     }
                 }
-            }
 
-            else
-            {
-                using (var db = new PostgresDBProvider())
+                else
                 {
+
                     using (var cmd = new NpgsqlCommand("UPDATE word SET name=@name, value=@value WHERE id='@id';", db.Connection))
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -168,7 +158,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
                         return entity;
                     }
                 }
-            }
+            }       
         }
 
         private Word GetWordFromDataReader(NpgsqlDataReader reader)
