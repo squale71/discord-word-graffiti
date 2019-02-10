@@ -3,16 +3,16 @@ using MongoDB.Driver;
 
 namespace Discord.WordGraffiti.Models.Database
 {
-    public class MongoDbConnection : DbConnection
+    public class MongoDBProvider : DBProvider
     {
         private MongoClient _client;
 
         public IMongoDatabase Context { get; }
 
-        public MongoDbConnection()
+        public MongoDBProvider()
         {
-            _client = new MongoClient(Configuration.Instance.Get("DatabaseConnectionString"));
-            Context = _client.GetDatabase(Configuration.Instance.Get("DatabaseName"));
+            _client = new MongoClient(Configuration.Instance.Get("MongoDatabaseConnectionString"));
+            Context = _client.GetDatabase(Configuration.Instance.Get("MongoDatabaseName"));
         }
 
         // Doesn't actually have any way to dispose, but keeping this here for now.

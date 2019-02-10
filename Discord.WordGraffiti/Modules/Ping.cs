@@ -1,5 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
+using Discord.WordGraffiti.Models.Database;
+using Npgsql;
 using System.Threading.Tasks;
 
 namespace Discord.WordGraffiti.Modules
@@ -11,8 +13,18 @@ namespace Discord.WordGraffiti.Modules
         {
             var x = (Context.Message.Author);
 
-            
-            await ReplyAsync($"You are user {x.Username} with id {x.Id}");
+            long count = 0;
+            using (var db = new PostgresDBProvider())
+            {
+                using (var cmd = new NpgsqlCommand("SELECT count(*) from word", db.Connection))
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                        count = reader.GetInt64(0);
+            }
+
+
+            await ReplyAsync($"I currently know about {count} total words!");
+            //await ReplyAsync($"You are user {x.Username} with id {x.Id}");
         }
     }
 }

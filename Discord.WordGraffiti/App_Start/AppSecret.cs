@@ -3,6 +3,7 @@
     public class AppSecret
     {
         public string DiscordApiKey { get; set; }
-        public string DatabaseConnectionString { get; set; }
+        public string MongoDatabaseConnectionString { get; set; }
+        public string PostgresDatabaseConnectionString { get; set; }
     }
 }

@@ -42,6 +42,7 @@ namespace Discord.WordGraffiti.App_Start
             await _client.LoginAsync(TokenType.Bot, botToken);
 
             await _client.StartAsync();
+            await Task.Delay(-1);
         }
 
         private Task Log(LogMessage arg)
@@ -66,7 +67,7 @@ namespace Discord.WordGraffiti.App_Start
 
             int argPos = 0;
 
-            if (message.HasStringPrefix("/blops ", ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            if (message.HasStringPrefix("/word ", ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
                 var context = new SocketCommandContext(_client, message);
 
