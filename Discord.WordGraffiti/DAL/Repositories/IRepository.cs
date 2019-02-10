@@ -7,10 +7,9 @@ namespace Discord.WordGraffiti.DAL.Repositories
 {
     public interface IRepository<T>
     {
-        Task<T> GetOneByFilter(Expression<Func<T, object>> filter, object value);
-        Task<IEnumerable<T>> GetManyByFilter<t>(Expression<Func<T, t>> filter, IEnumerable<t> value);
+        Task<T> GetByID(int ID);
         Task<IEnumerable<T>> GetAll();
-        Task Upsert(T item);
-        Task Delete(T item);
+        Task<T> Upsert(T entity);
+        Task Delete(T entity);
     }
 }
