@@ -20,13 +20,11 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task Delete(Word entity)
         {
             using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("DELETE FROM word WHERE id='@id';", db.Connection))
+            using (var reader = cmd.ExecuteReader())
             {
-                using (var cmd = new NpgsqlCommand("DELETE FROM word WHERE id='@id';", db.Connection))
-                using (var reader = cmd.ExecuteReader())
-                {
-                    cmd.Parameters.AddWithValue("@id", entity.Id);
-                    await cmd.ExecuteNonQueryAsync();
-                }
+                cmd.Parameters.AddWithValue("@id", entity.Id);
+                await cmd.ExecuteNonQueryAsync();
             }
         }
 
