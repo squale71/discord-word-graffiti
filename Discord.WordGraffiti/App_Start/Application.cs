@@ -9,6 +9,8 @@ using Npgsql;
 using Discord.WordGraffiti.DAL.Database;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Discord.WordGraffiti.DAL.Repositories;
+using Discord.WordGraffiti.DAL.Models;
 
 namespace Discord.WordGraffiti.App_Start
 {
@@ -34,8 +36,7 @@ namespace Discord.WordGraffiti.App_Start
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
-                // Example of injecting a repository here
-                // .AddSingleton<IRepository<Model>, ModelRepository>()
+                .AddSingleton<IRepository<Word>, WordRepository>()
                 .BuildServiceProvider();
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
