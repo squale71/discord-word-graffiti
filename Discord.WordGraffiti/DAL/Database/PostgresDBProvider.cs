@@ -1,7 +1,7 @@
 ﻿using Discord.WordGraffiti.App_Start;
 using Npgsql;
 
-namespace Discord.WordGraffiti.Models.Database
+namespace Discord.WordGraffiti.DAL.Database
 {
     public class PostgresDBProvider : DBProvider
     {

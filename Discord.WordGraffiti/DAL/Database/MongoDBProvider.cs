@@ -1,7 +1,7 @@
 ﻿using Discord.WordGraffiti.App_Start;
 using MongoDB.Driver;
 
-namespace Discord.WordGraffiti.Models.Database
+namespace Discord.WordGraffiti.DAL.Database
 {
     public class MongoDBProvider : DBProvider
     {
