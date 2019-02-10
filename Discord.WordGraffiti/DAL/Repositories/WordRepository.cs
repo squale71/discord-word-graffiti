@@ -148,6 +148,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
                     using (var cmd = new NpgsqlCommand("UPDATE word SET name=@name, value=@value WHERE id='@id';", db.Connection))
                     using (var reader = cmd.ExecuteReader())
                     {
+                        cmd.Parameters.AddWithValue("@id", entity.Id);
                         cmd.Parameters.AddWithValue("@name", entity.Name);
                         cmd.Parameters.AddWithValue("@value", entity.Value);
 
