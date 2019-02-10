@@ -9,7 +9,7 @@ namespace Discord.WordGraffiti.Modules
     public class Ping : ModuleBase<SocketCommandContext>
     {
         [Command("ping")]
-        public async Task PingAsync()
+        public async Task PingAsync(string word)
         {
             var x = (Context.Message.Author);
 
