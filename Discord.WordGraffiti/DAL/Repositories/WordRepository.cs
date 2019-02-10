@@ -90,8 +90,6 @@ namespace Discord.WordGraffiti.DAL.Repositories
                 cmd.Parameters.AddWithValue("name", word);
                 using (var reader = cmd.ExecuteReader())
                 {
-                    var sql = cmd.CommandText;
-
                     if (await reader.ReadAsync())
                     {
                         return GetWordFromDataReader(reader);
