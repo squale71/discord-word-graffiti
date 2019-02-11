@@ -37,6 +37,7 @@ namespace Discord.WordGraffiti.App_Start
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
                 .AddSingleton<IWordRepository, WordRepository>()
+                .AddSingleton<IUserRepository, UserRepository>()
                 .BuildServiceProvider();
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
@@ -66,9 +67,30 @@ namespace Discord.WordGraffiti.App_Start
 
         private async Task HandleMessageAsync(SocketMessage arg)
         {
+           
             var message = arg as SocketUserMessage;
 
             if (message is null || message.Author.IsBot) return;
+
+            var userRepository = _services.GetService<IUserRepository>();
+            var user = await userRepository.GetById(message.Author.Id);
+
+            if(user == null)
+            {
+                user = new User();
+                user.Id = message.Author.Id;
+                user.Username = message.Author.Username;
+
+                Console.WriteLine("adding user");
+                await userRepository.Insert(user);
+            }
+            else
+            {
+                //do point assignment shtuff here.
+                Console.WriteLine("User already exists");
+            }
+
+
 
             int argPos = 0;
 
@@ -85,10 +107,11 @@ namespace Discord.WordGraffiti.App_Start
             }
             else //This is where we're parsing all chat messages to do point assignment stuff. Probably should break this out somewhere (into multiple pieces, really)so consider this proof of concept.
             {
-
-                string[] msgWords = Regex.Replace(message.Content, @"[^\w]"," ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
-                var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
-
+                var uniqueWords = await GetWordsFromMessage(message);
+                //public async Task GetValueAsync(int id)
+                {
+                 
+                }
                 int wordVals = 0;
                 using (var db = new PostgresDBProvider())
                 {
@@ -107,5 +130,14 @@ namespace Discord.WordGraffiti.App_Start
                 await chnl.SendMessageAsync("That message was worth " + wordVals + " points!");
             }
         }
+        
+        private async Task<HashSet<string>> GetWordsFromMessage(SocketUserMessage message)
+        {
+            string[] msgWords = Regex.Replace(message.Content, @"[^\w]", " ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
+            var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
+            return uniqueWords;
+        }
+               
+
     }
 }
