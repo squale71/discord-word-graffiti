@@ -37,6 +37,7 @@ namespace Discord.WordGraffiti.App_Start
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
                 .AddSingleton<IWordRepository, WordRepository>()
+                .AddSingleton<IUserRepository, UserRepository>()
                 .BuildServiceProvider();
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
@@ -71,31 +72,25 @@ namespace Discord.WordGraffiti.App_Start
 
             if (message is null || message.Author.IsBot) return;
 
-            using (var db = new PostgresDBProvider())
+            var userRepository = _services.GetService<IUserRepository>();
+            var user = await userRepository.GetById(message.Author.Id);
+
+            if(user == null)
             {
-                long testval = 0;
-                using (var cmd = new NpgsqlCommand("SELECT id FROM user WHERE EXISTS (SELECT id FROM user WHERE id ='" + message.Author.Id + "');", db.Connection))
-                using (var reader = cmd.ExecuteReader())
-                    while (reader.Read())
-                        //testval = reader.GetBoolean
-                Console.WriteLine(testval);      
-                    //var user = new User();
+                user = new User();
+                user.Id = message.Author.Id;
+                user.Username = message.Author.Username;
 
-                //Console.WriteLine(message.Author.Id);
-
-                //user.Id = message.Author.Id;
-                //user.Username = message.Author.Username;
-
-                //Console.WriteLine("DB User ID: " + user.Id);
-                //Console.WriteLine("DB Username: " + user.Username);
-
-
-                //using (var cmd = new NpgsqlCommand("SELECT value from word WHERE name='" + word + "'", db.Connection))
-                //using (var reader = cmd.ExecuteReader())
-                //    while (reader.Read())
-                //        val = reader.GetInt32(0);                
-
+                Console.WriteLine("adding user");
+                await userRepository.Insert(user);
             }
+            else
+            {
+                //do point assignment shtuff here.
+                Console.WriteLine("User already exists");
+            }
+
+
 
             int argPos = 0;
 
@@ -142,11 +137,7 @@ namespace Discord.WordGraffiti.App_Start
             var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
             return uniqueWords;
         }
-
-        public async Task GetValueAsync(int id)
-        {
-
-        }
+               
 
     }
 }

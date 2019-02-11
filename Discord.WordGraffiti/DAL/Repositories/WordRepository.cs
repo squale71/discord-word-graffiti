@@ -58,7 +58,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
         /// </summary>
         /// <param name="id"></param>
         /// <returns>A word, or null if not found.</returns>
-        public async Task<Word> GetByID(int id)
+        public async Task<Word> GetById(int id)
         {
             using (var db = new PostgresDBProvider())
             using (var cmd = new NpgsqlCommand("SELECT * from word WHERE id='@id';", db.Connection))
@@ -125,6 +125,41 @@ namespace Discord.WordGraffiti.DAL.Repositories
             return wordCollection;
         }
 
+        public async Task<Word> Insert(Word entity)
+        {
+            using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("INSERT INTO word (name, value) VALUES (@name, @value);", db.Connection))
+            {
+                cmd.Parameters.AddWithValue("@name", entity.Name);
+                cmd.Parameters.AddWithValue("@value", entity.Value);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    await cmd.ExecuteNonQueryAsync();
+
+                    return await GetByWord(entity.Name);
+                }
+            }
+        }
+
+        public async Task<Word> Update(Word entity)
+        {
+            using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("UPDATE word SET name=@name, value=@value WHERE id='@id';", db.Connection))
+            {
+                cmd.Parameters.AddWithValue("@id", entity.Id);
+                cmd.Parameters.AddWithValue("@name", entity.Name);
+                cmd.Parameters.AddWithValue("@value", entity.Value);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    await cmd.ExecuteNonQueryAsync();
+
+                    return entity;
+                }
+            }
+        }
+
         /// <summary>
         /// Given a word entity, either updates the word if it exists, or inserts it if not.
         /// </summary>
@@ -132,41 +167,18 @@ namespace Discord.WordGraffiti.DAL.Repositories
         /// <returns>The newly updated word.</returns>
         public async Task<Word> Upsert(Word entity)
         {
-            var word = await GetByID(entity.Id);
+            var word = await GetById(entity.Id);
 
             using (var db = new PostgresDBProvider())
             {
                 if (word == null)
                 {
-                    using (var cmd = new NpgsqlCommand("INSERT INTO word (name, value) VALUES (@name, @value);", db.Connection))
-                    {
-                        cmd.Parameters.AddWithValue("@name", entity.Name);
-                        cmd.Parameters.AddWithValue("@value", entity.Value);
-
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            await cmd.ExecuteNonQueryAsync();
-
-                            return await GetByWord(entity.Name);
-                        }
-                    }   
+                    return await Insert(entity);
                 }
 
                 else
                 {
-                    using (var cmd = new NpgsqlCommand("UPDATE word SET name=@name, value=@value WHERE id='@id';", db.Connection))
-                    {
-                        cmd.Parameters.AddWithValue("@id", entity.Id);
-                        cmd.Parameters.AddWithValue("@name", entity.Name);
-                        cmd.Parameters.AddWithValue("@value", entity.Value);
-
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            await cmd.ExecuteNonQueryAsync();
-
-                            return entity;
-                        }
-                    }                   
+                    return await Update(entity); 
                 }
             }       
         }
