@@ -2,15 +2,10 @@
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Npgsql;
-using Discord.WordGraffiti.DAL.Database;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using Discord.WordGraffiti.DAL.Repositories;
-using Discord.WordGraffiti.DAL.Models;
+using Discord.WordGraffiti.Handlers;
 
 namespace Discord.WordGraffiti.App_Start
 {
@@ -19,6 +14,7 @@ namespace Discord.WordGraffiti.App_Start
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
+        private IMessageHandler _messageHandler;
 
         private Application() { }
 
@@ -38,7 +34,10 @@ namespace Discord.WordGraffiti.App_Start
                 .AddSingleton(_commands)
                 .AddSingleton<IWordRepository, WordRepository>()
                 .AddSingleton<IUserRepository, UserRepository>()
+                .AddSingleton<IMessageHandler, MessageHandler>()
                 .BuildServiceProvider();
+
+            _messageHandler = new MessageHandler(_client, _commands, _services.GetService<IUserRepository>(), _services.GetService<IWordRepository>());
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
 
@@ -66,30 +65,10 @@ namespace Discord.WordGraffiti.App_Start
         }
 
         private async Task HandleMessageAsync(SocketMessage arg)
-        {
-           
+        {           
             var message = arg as SocketUserMessage;
 
             if (message is null || message.Author.IsBot) return;
-
-            var userRepository = _services.GetService<IUserRepository>();
-            var user = await userRepository.GetById(message.Author.Id);
-
-            if(user == null)
-            {
-                user = new User();
-                user.Id = message.Author.Id;
-                user.Username = message.Author.Username;
-
-                Console.WriteLine("adding user");
-                await userRepository.Insert(user);
-            }
-            else
-            {
-                //do point assignment shtuff here.
-                Console.WriteLine("User already exists");
-            }
-
 
 
             int argPos = 0;
@@ -105,39 +84,10 @@ namespace Discord.WordGraffiti.App_Start
                     Console.WriteLine(res.ErrorReason);
                 }
             }
-            else //This is where we're parsing all chat messages to do point assignment stuff. Probably should break this out somewhere (into multiple pieces, really)so consider this proof of concept.
+            else 
             {
-                var uniqueWords = await GetWordsFromMessage(message);
-                //public async Task GetValueAsync(int id)
-                {
-                 
-                }
-                int wordVals = 0;
-                using (var db = new PostgresDBProvider())
-                {
-                    foreach (var word in uniqueWords)
-                    {
-                        Console.WriteLine(word);
-                        int val = 0;
-                        using (var cmd = new NpgsqlCommand("SELECT value from word WHERE name='"+word+"'", db.Connection))
-                        using (var reader = cmd.ExecuteReader())
-                            while (reader.Read())
-                                val = reader.GetInt32(0);
-                        wordVals += val;
-                    }
-                }
-                var chnl = _client.GetChannel(message.Channel.Id) as IMessageChannel;
-                await chnl.SendMessageAsync("That message was worth " + wordVals + " points!");
+                await _messageHandler.HandleUserMessage(message);
             }
         }
-        
-        private async Task<HashSet<string>> GetWordsFromMessage(SocketUserMessage message)
-        {
-            string[] msgWords = Regex.Replace(message.Content, @"[^\w]", " ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
-            var uniqueWords = new HashSet<string>(msgWords); //reduces list to unique words only
-            return uniqueWords;
-        }
-               
-
     }
 }
