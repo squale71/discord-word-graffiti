@@ -1,6 +1,7 @@
 ﻿using Discord.WordGraffiti.DAL.Database;
 using Discord.WordGraffiti.DAL.Models;
 using Npgsql;
+using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -110,9 +111,11 @@ namespace Discord.WordGraffiti.DAL.Repositories
             var wordCollection = new List<Word>();
 
             using (var db = new PostgresDBProvider())
-            using (var cmd = new NpgsqlCommand($"SELECT * from word WHERE name in (@words);", db.Connection))
+            using (var cmd = new NpgsqlCommand($"SELECT * from word WHERE name = ANY(:words);", db.Connection))
             {
-                cmd.Parameters.AddWithValue("@words", string.Join(",", words));
+                cmd.Parameters.Add("words", NpgsqlDbType.Array | NpgsqlDbType.Varchar).Value = words;
+
+                var sql = cmd.CommandText;
                 using (var reader = cmd.ExecuteReader())
                 {                  
                     while (await reader.ReadAsync())
