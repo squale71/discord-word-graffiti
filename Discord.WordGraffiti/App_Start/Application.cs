@@ -39,7 +39,7 @@ namespace Discord.WordGraffiti.App_Start
                 .AddSingleton<IMessageHandler, MessageHandler>()
                 .BuildServiceProvider();
 
-            _messageHandler = new MessageHandler(_client, _commands, _services.GetService<IUserRepository>(), _services.GetService<IWordRepository>());
+            _messageHandler = new MessageHandler(_client, _commands, _services.GetService<IUserRepository>(), _services.GetService<IWordRepository>(), _services.GetService<IUserWordMappingRepository>());
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
 

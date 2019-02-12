@@ -12,32 +12,39 @@ namespace Discord.WordGraffiti.DAL.Repositories
 {
     public class UserWordMappingRepository : IUserWordMappingRepository
     {
-        public async Task AddUserWords(int userId, IEnumerable<UserWordMapping> mappings)
+        public async Task InsertWordMappings(IEnumerable<UserWordMapping> mappings)
         {
-            using (var db = new PostgresDBProvider())
+            try
             {
-                var transaction = db.Connection.BeginTransaction();
-
-                using (var cmd = db.Connection.CreateCommand())
+                using (var db = new PostgresDBProvider())
                 {
-                    cmd.CommandText =
-                        "insert into user_word_mapping(user_id, word_id, value)" +
-                            "values(@userId, :wordIds, :values)";
+                    var transaction = db.Connection.BeginTransaction();
 
-                    cmd.Transaction = transaction;
-
-                    cmd.Parameters.AddWithValue("userId", userId);
-                    cmd.Parameters.Add("wordIds", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = mappings.Select(x => x.WordId);
-                    cmd.Parameters.Add("values", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = mappings.Select(x => x.Value);
-                    
-                    using (var reader = cmd.ExecuteReader())
+                    var stringCollection = new List<string>();
+                    using (var cmd = db.Connection.CreateCommand())
                     {
+                        foreach (var mapping in mappings)
+                        {
+                            stringCollection.Add($"({mapping.UserId}, {mapping.WordId}, {mapping.Value})");
+                        }
+
+                        cmd.CommandText =
+                            "INSERT into user_word_mapping(user_id, word_id, value) VALUES " + string.Join(",", stringCollection) + ";";
+
+                        cmd.Transaction = transaction;
                         await cmd.ExecuteNonQueryAsync();
                     }
-                }
 
-                await transaction.CommitAsync();
-            }           
+                    await transaction.CommitAsync();
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+            }
+                     
         }
 
         public async Task Delete(UserWordMapping entity)
@@ -112,7 +119,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task<UserWordMapping> GetByWordName(string wordName)
         {
             using (var db = new PostgresDBProvider())
-            using (var cmd = new NpgsqlCommand("SELECT wm.* from user_word_mapping wm JOIN word w ON w.Id = wm.word_id WHERE w.name ='@wordName';", db.Connection))
+            using (var cmd = new NpgsqlCommand("SELECT wm.* from user_word_mapping wm INNER JOIN word w ON (w.Id = wm.word_id) WHERE w.name ='@wordName';", db.Connection))
             {
                 cmd.Parameters.AddWithValue("wordName", wordName);
 
@@ -128,14 +135,14 @@ namespace Discord.WordGraffiti.DAL.Repositories
             return null;
         }
 
-        public async Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(int userId)
+        public async Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(ulong userId)
         {
             var collection = new List<UserWordMapping>();
 
             using (var db = new PostgresDBProvider())
             using (var cmd = new NpgsqlCommand($"SELECT * from user_word_mapping WHERE user_id = @userId;", db.Connection))
             {
-                cmd.Parameters.AddWithValue("userId", userId);
+                cmd.Parameters.AddWithValue("userId", Convert.ToInt64(userId));
 
                 var sql = cmd.CommandText;
                 using (var reader = cmd.ExecuteReader())
@@ -150,15 +157,36 @@ namespace Discord.WordGraffiti.DAL.Repositories
             return collection;
         }
 
-        public async Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(int userId, params string[] words)
+        public async Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(ulong userId, IEnumerable<string> words)
         {
             var collection = new List<UserWordMapping>();
 
             using (var db = new PostgresDBProvider())
-            using (var cmd = new NpgsqlCommand("SELECT wm.* from user_word_mapping wm JOIN word w ON w.Id = wm.word_id WHERE m.user_id = @userId and w.name = ANY(:words);", db.Connection))
+            using (var cmd = new NpgsqlCommand("SELECT wm.* FROM user_word_mapping wm INNER JOIN word w ON (w.Id = wm.word_id) WHERE wm.user_id = @userId and w.name = ANY(:words);", db.Connection))
             {
-                cmd.Parameters.AddWithValue("userId", userId);
-                cmd.Parameters.Add("words", NpgsqlDbType.Array | NpgsqlDbType.Varchar).Value = words;
+                cmd.Parameters.AddWithValue("userId", Convert.ToInt64(userId));
+                cmd.Parameters.Add("words", NpgsqlDbType.Array | NpgsqlDbType.Varchar).Value = words.ToArray();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        collection.Add(GetUserWordMappingFromDataReader(reader));
+                    }
+                }
+            }
+
+            return collection;
+        }
+
+        public async Task<IEnumerable<UserWordMapping>> GetWordsOwnedByOtherUsers(ulong userId, IEnumerable<string> words)
+        {
+            var collection = new List<UserWordMapping>();
+
+            using (var db = new PostgresDBProvider())
+            using (var cmd = new NpgsqlCommand("SELECT wm.* FROM user_word_mapping wm INNER JOIN word w ON (w.Id = wm.word_id) WHERE wm.user_id != @userId and w.name = ANY(:words);", db.Connection))
+            {
+                cmd.Parameters.AddWithValue("userId", Convert.ToInt64(userId));
+                cmd.Parameters.Add("words", NpgsqlDbType.Array | NpgsqlDbType.Varchar).Value = words.ToArray();
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (await reader.ReadAsync())
@@ -192,7 +220,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task<UserWordMapping> Update(UserWordMapping entity)
         {
             using (var db = new PostgresDBProvider())
-            using (var cmd = new NpgsqlCommand("UPDATE word SET value=@value, user_id=@userId, word_id=@wordId WHERE id=@id;", db.Connection))
+            using (var cmd = new NpgsqlCommand("UPDATE user_word_mapping SET value=@value, user_id=@userId, word_id=@wordId WHERE id=@id;", db.Connection))
             {
                 cmd.Parameters.AddWithValue("id", entity.Id);
                 cmd.Parameters.AddWithValue("userId", entity.UserId);
@@ -208,7 +236,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
             }
         }
 
-        public async Task UpdateUserWordOwnership(int userId, IEnumerable<UserWordMapping> mappings)
+        public async Task UpdateUserWordOwnership(ulong userId, IEnumerable<UserWordMapping> mappings)
         {
             using (var db = new PostgresDBProvider())
             {
@@ -224,14 +252,11 @@ namespace Discord.WordGraffiti.DAL.Repositories
                         // Dynamically building sql string to prevent multiple trips to database.
                         foreach (var mapping in mappings)
                         {
-                            sb.Append($"UPDATE word SET value=@{mapping.Value}, user_id=@{mapping.UserId}, word_id=@{mapping.WordId} WHERE id={mapping.Id};");
+                            sb.Append($"UPDATE user_word_mapping SET value={mapping.Value}, user_id={Convert.ToInt64(userId)}, word_id={mapping.WordId} WHERE id={mapping.Id};");
                         }
 
                         cmd.CommandText = sb.ToString();
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            await cmd.ExecuteNonQueryAsync();
-                        }
+                        await cmd.ExecuteNonQueryAsync();
                     }
                 }
 
@@ -273,9 +298,10 @@ namespace Discord.WordGraffiti.DAL.Repositories
     {
         Task<UserWordMapping> GetByWordId(int wordId);
         Task<UserWordMapping> GetByWordName(string wordName);
-        Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(int userId);
-        Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(int userId, params string[] words);
-        Task AddUserWords(int userId, IEnumerable<UserWordMapping> mappings);
-        Task UpdateUserWordOwnership(int userId, IEnumerable<UserWordMapping> mappings);
+        Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(ulong userId);
+        Task<IEnumerable<UserWordMapping>> GetUserOwnedWords(ulong userId, IEnumerable<string> words);
+        Task<IEnumerable<UserWordMapping>> GetWordsOwnedByOtherUsers(ulong userId, IEnumerable<string> words);
+        Task InsertWordMappings(IEnumerable<UserWordMapping> mappings);
+        Task UpdateUserWordOwnership(ulong userId, IEnumerable<UserWordMapping> mappings);
     }
 }
