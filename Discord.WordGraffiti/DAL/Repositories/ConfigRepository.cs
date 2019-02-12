@@ -125,6 +125,6 @@ namespace Discord.WordGraffiti.DAL.Repositories
     public interface IConfigRepository : IRepository<Config>
     {
         Task<Config> GetByName(string name);
-        Task<Config> SetByName(string name);
+        //Task<Config> SetByName(string name);
     }
 }
