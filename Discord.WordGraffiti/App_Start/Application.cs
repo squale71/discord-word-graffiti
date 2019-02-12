@@ -32,6 +32,7 @@ namespace Discord.WordGraffiti.App_Start
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
+                .AddSingleton<IConfigRepository, ConfigRepository>()
                 .AddSingleton<IWordRepository, WordRepository>()
                 .AddSingleton<IUserRepository, UserRepository>()
                 .AddSingleton<IUserWordMappingRepository, UserWordMappingRepository>()
