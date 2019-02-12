@@ -14,11 +14,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
     /// </summary>
     public class ConfigRepository : IConfigRepository
     {
-        public Task Delete(Config entity)
-        {
-            throw new NotImplementedException();
-        }
-
+  
         /// <summary>
         /// Gets all words from the word table.
         /// </summary>
@@ -42,7 +38,7 @@ namespace Discord.WordGraffiti.DAL.Repositories
         public async Task<Config> GetById(int id)
         {
             using (var db = new PostgresDBProvider())
-            using (var cmd = new NpgsqlCommand("SELECT * from word WHERE id='@id';", db.Connection))
+            using (var cmd = new NpgsqlCommand("SELECT * from config WHERE id='@id';", db.Connection))
             {
                 cmd.Parameters.AddWithValue("@id", id);
 
@@ -58,11 +54,6 @@ namespace Discord.WordGraffiti.DAL.Repositories
             return null;
         }
 
-        /// <summary>
-        /// Give a string, returns a word that matches the value.
-        /// </summary>
-        /// <param name="word"></param>
-        /// <returns>A word, or null if not found.</returns>
         public async Task<Config> GetByName(string name)
         {
             using (var db = new PostgresDBProvider())
@@ -79,16 +70,6 @@ namespace Discord.WordGraffiti.DAL.Repositories
             }
                        
             return null;
-        }
-
-        public Task<Config> Insert(Config entity)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Config> SetByName(string name)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<Config> Update(Config entity)
@@ -109,11 +90,6 @@ namespace Discord.WordGraffiti.DAL.Repositories
             }
         }
 
-        public Task<Config> Upsert(Config entity)
-        {
-            throw new NotImplementedException();
-        }
-
         private Config GetConfigFromDataReader(NpgsqlDataReader reader)
         {
             return new Config
@@ -123,11 +99,32 @@ namespace Discord.WordGraffiti.DAL.Repositories
                 Value = reader["value"].ToString()
             };
         }
+
+        public Task<Config> Insert(Config entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Config> SetByName(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Config> Upsert(Config entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Delete(Config entity)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 
     public interface IConfigRepository : IRepository<Config>
     {
         Task<Config> GetByName(string name);
-        Task<Config> SetByName(string name);
+        //Task<Config> SetByName(string name);
     }
 }
