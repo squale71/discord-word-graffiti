@@ -2,9 +2,10 @@
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Discord.WordGraffiti.DAL.Repositories;
+using Discord.WordGraffiti.Handlers;
 
 namespace Discord.WordGraffiti.App_Start
 {
@@ -13,6 +14,7 @@ namespace Discord.WordGraffiti.App_Start
         private DiscordSocketClient _client;
         private CommandService _commands;
         private IServiceProvider _services;
+        private IMessageHandler _messageHandler;
 
         private Application() { }
 
@@ -30,9 +32,14 @@ namespace Discord.WordGraffiti.App_Start
             _services = new ServiceCollection()
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
-                // Example of injecting a repository here
-                // .AddSingleton<IRepository<Model>, ModelRepository>()
+                .AddSingleton<IConfigRepository, ConfigRepository>()
+                .AddSingleton<IWordRepository, WordRepository>()
+                .AddSingleton<IUserRepository, UserRepository>()
+                .AddSingleton<IUserWordMappingRepository, UserWordMappingRepository>()
+                .AddSingleton<IMessageHandler, MessageHandler>()
                 .BuildServiceProvider();
+
+            _messageHandler = new MessageHandler(_client, _commands, _services.GetService<IUserRepository>(), _services.GetService<IWordRepository>(), _services.GetService<IUserWordMappingRepository>());
 
             string botToken = Configuration.Instance.Get("DiscordApiKey");
 
@@ -54,16 +61,17 @@ namespace Discord.WordGraffiti.App_Start
 
         public async Task RegisterCommandsAsync()
         {
-            _client.MessageReceived += HandleCommandAsync;
+            _client.MessageReceived += HandleMessageAsync;
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
 
-        private async Task HandleCommandAsync(SocketMessage arg)
-        {
+        private async Task HandleMessageAsync(SocketMessage arg)
+        {           
             var message = arg as SocketUserMessage;
 
             if (message is null || message.Author.IsBot) return;
+
 
             int argPos = 0;
 
@@ -77,6 +85,10 @@ namespace Discord.WordGraffiti.App_Start
                 {
                     Console.WriteLine(res.ErrorReason);
                 }
+            }
+            else 
+            {
+                await _messageHandler.HandleUserMessage(message);
             }
         }
     }
