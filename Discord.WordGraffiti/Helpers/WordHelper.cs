@@ -16,7 +16,7 @@ namespace Discord.WordGraffiti.Helpers
         {
             result = value.GetUniqueWordsFromString().ToList();
 
-            return result.Count() > 50;
+            return result.Count() > amount;
         }
 
     }
