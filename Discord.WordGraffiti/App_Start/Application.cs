@@ -36,6 +36,7 @@ namespace Discord.WordGraffiti.App_Start
                 .AddSingleton<IWordRepository, WordRepository>()
                 .AddSingleton<IUserRepository, UserRepository>()
                 .AddSingleton<IUserWordMappingRepository, UserWordMappingRepository>()
+                .AddSingleton<ILevelThresholdRepository, LevelThresholdRepository>()
                 .AddSingleton<IMessageHandler, MessageHandler>()
                 .BuildServiceProvider();
 
