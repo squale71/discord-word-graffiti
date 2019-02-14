@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Discord.WordGraffiti.DAL.Models;
 using Discord.WordGraffiti.DAL.Repositories;
+using Discord.WordGraffiti.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,8 @@ namespace Discord.WordGraffiti.Handlers
         private IConfigRepository _configRepository;
         private IUserWordMappingRepository _userWordMappingRepository;
 
+        private IMessageChannel _channel;
+
         public MessageHandler(DiscordSocketClient client, CommandService commands, IUserRepository userRepository, IWordRepository wordRepository, IUserWordMappingRepository userWordMappingRepository, IConfigRepository configRepository)
         {
             _client = client;
@@ -31,53 +34,43 @@ namespace Discord.WordGraffiti.Handlers
 
         public async Task HandleUserMessage(SocketUserMessage message)
         {
+            _channel = _client.GetChannel(message.Channel.Id) as IMessageChannel;
+
             var user = await _userRepository.GetById(message.Author.Id);
 
             if (user == null)
             {
-                user = new User();
-                user.Id = message.Author.Id;
-                user.Username = message.Author.Username;
+                user = new User
+                {
+                    Id = message.Author.Id,
+                    Username = message.Author.Username
+                };
 
-                Console.WriteLine("adding user");
                 await _userRepository.Insert(user);
             }
-            else
+
+            var configValue = await GetConfigInfo("maxWords");
+           
+            if (configValue == null || !int.TryParse(configValue.Value, out int maximum))
             {
-                
-                Console.WriteLine("User already exists");
+                return;
             }
 
-            var uniqueWords = GetWordsFromMessage(message);
-            if(!uniqueWords.Any())
+            if (WordHelper.TryGetMaximumWordsFromString(message.Content, maximum, out List<string> words))
             {
-                Console.WriteLine("No unique words or word limit exceeded");
+                return;
             }
-            var wordColl = await _wordRepository.GetByWords(uniqueWords);
 
-            await SetUserWordMappings(user, wordColl);
+            var wordColl = await _wordRepository.GetByWords(words);
 
-            var chnl = _client.GetChannel(message.Channel.Id) as IMessageChannel;
-            await chnl.SendMessageAsync("That message was worth " + wordColl.Sum(x => x.Value) + " points!");
-        }
-
-        private HashSet<string> GetWordsFromMessage(SocketUserMessage message)
-        {
-            string[] msgWords = Regex.Replace(message.Content, @"[^\w]", " ").Split(' '); // splits messages into an array of words - also strips out non-letter characters and replaces with a space.
-            var uniqueWords = new HashSet<string>(msgWords.Select(x => x.ToLower())); //reduces list to unique words only
-            var maxWords = GetConfigInfo("maxWords").Result.Value; //Looks up a config with the name "maxWords" and stores its value
-            if (uniqueWords.Count > Convert.ToInt32(maxWords)) //If the number of unique words(uniqueWords) exceeds the maxWords value, we reject the message return no words
+            if (wordColl.Any())
             {
-                Console.WriteLine("Too many words!");
-                var chnl = _client.GetChannel(message.Channel.Id) as IMessageChannel;
-                chnl.SendMessageAsync("I didn't count your last message - it exceeded the limit of " + maxWords + " words");
-                return null;
-            }
-            else
-            {
-                return uniqueWords;
+                await SetUserWordMappings(user, wordColl);
+
+                await _channel.SendMessageAsync("That message was worth " + wordColl.Sum(x => x.Value) + " points!");
             }
         }
+
 
         private async Task<Config> GetConfigInfo(string configName)
         {
