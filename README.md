@@ -11,10 +11,13 @@ You can look up how to get started creating a Discord app in their documentation
 
 Do the following to get going:
 
-Open Powershell and 'cd' to your project directory:
+1. Open Powershell and 'cd' to your project directory:
 
 Run the following commands:
 
-dotnet user-secrets set DiscordApiKey "{your-key}"
+```dotnet user-secrets set DiscordApiKey "{your-key}"```
 
-dotnet user-secrets set PostgresDatabaseConnectionString "Host={ip};Username={username};Password={pw};Database=WordGraffiti"
+```dotnet user-secrets set PostgresDatabaseConnectionString "Host={ip};Username={username};Password={pw};Database=WordGraffiti"```
+
+1. Run the following command to spin up your database:
+```docker compose -f .\docker-compose.postgres.yml up -d```
