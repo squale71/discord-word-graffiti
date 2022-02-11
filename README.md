@@ -19,5 +19,6 @@ Run the following commands:
 
 ```dotnet user-secrets set PostgresDatabaseConnectionString "Host={ip};Username={username};Password={pw};Database=WordGraffiti"```
 
-1. Run the following command to spin up your database:
+2. Run the following command to spin up your database:
+
 ```docker compose -f .\docker-compose.postgres.yml up -d```
